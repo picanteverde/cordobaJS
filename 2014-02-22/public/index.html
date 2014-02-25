@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=1024" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <title>High Order Functions</title>
+
+        <meta name="author" content="picanteverde" />
+        <link href="http://fonts.googleapis.com/css?family=Open+Sans:regular,semibold,italic,italicsemibold|PT+Sans:400,700,400italic,700italic|PT+Serif:400,700,400italic,700italic" rel="stylesheet" />
+        <link href="css/slides.css" rel="stylesheet" />
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/js/jquery.js"></script>
+        <script src="/js/sendJobs.js"></script>
+
+    </head>
+    <body class="impress-not-supported">
+        <div class="fallback-message">
+            <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+            <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+        </div>
+        <div id="impress">
+            <div id="start" class="step slide" data-x="-11000" data-y="-1500">
+                <h1>High Order Functions</h1>
+            </div>
+            <div class="step slide" data-x="-9900" data-y="-1500">
+<h2>Function</h2>
+<pre class="big">
+function(<span class="red">a</span>,<span class="green">b</span>) {
+    var <span class="blue">x</span> = <span class="red">a</span> + <span class="green">b</span>;
+    return <span class="blue">x</span>;
+}
+</pre>
+            </div>
+            <div class="step slide" data-x="-8800" data-y="-1500">
+<h1>High Order Functions?</h1>
+            </div>
+            <div class="step slide" data-x="-7700" data-y="-1500">
+<h1 class="medium">Functions that can receive one or more functions as parameters and return one or more functions as result</h1>
+            </div>
+            <div class="step slide" data-x="-6600" data-y="-1500">
+<pre class="big">
+function(<span class="red">a</span>,<span class="green">b</span>) {
+    ...
+    return <span class="blue">x</span>;
+}
+</pre>
+<h4 class="move-left">functions must be first-class citizens<h4>
+            </div>
+            <div class="step slide" data-x="-5500" data-y="-1500">
+<h2>Notion of Callback</h2>
+<pre class="big">
+<span class="lightgrey">jQuery(</span>function($){
+    ...
+}<span class="lightgrey">);</span>
+</pre>
+<h4 class="move-left">usually used to solve asynchrony</h4>
+            </div>
+            <div class="step slide" data-x="-4400" data-y="-1500">
+<h1 class="medium">Inversion of Control<br/><br/><br/>Dependency Injection</h1>
+            </div>
+            <div class="step slide" data-x="-3300" data-y="-1500">
+<pre class="left">
+function do_it(inputs, <span class="green">obj</span>, <span class="red">name</span>){
+    ...
+    <span class="green">obj</span>[<span class="red">name</span>] = result;
+    return;
+}
+</pre>
+<pre class="right">
+function do_it(input, <span class="red">callback</span>){
+    ...
+    <span class="red">callback</span>(result);
+    return;
+}
+</pre>
+<h4 class="left move-left mtop">access to the entire obj<br/>(all methods and variables at anytime)</h4>
+<h4 class="right move-left mtop">just the callback<br/>(at any time?)</h4>
+            </div>
+            <div class="step slide" data-x="-2200" data-y="-1500">
+<h2>Using this callbacks thing</h2>
+<pre class="big">
+<span class="lightgrey">do_it(my_inputs, </span>function(<span class="blue">result</span>){
+    <span class="red">my_obj</span>.<span class="green">blah</span> = <span class="blue">result</span>;
+}<span class="lightgrey">);</span>
+</pre>
+            </div>
+            <div class="step slide" data-x="-1100" data-y="-1500">
+<h2>Usefull High Order Functions</h2>
+<h3>Storer</h3>
+<pre class="big">
+var storer = function (<span class="red">obj</span>, <span class="green">prop</span>){
+    return function(<span class="blue">result</span>){
+        <span class="red">obj</span>[<span class="green">prop</span>] = <span class="blue">result</span>;
+    };
+}
+</pre>
+<pre>
+do_it(my_inputs, storer(my_obj, "blah"));
+</pre>
+            </div>
+            <div class="step slide" data-x="0" data-y="-1500">
+<h2>Storer Maker</h2>
+<pre class="big">
+var storer_maker = function(<span class="green">obj</span>){
+    return function(<span class="red">prop</span>){
+        return function(<span class="blue">result</span>){
+            <span class="green">obj</span>[<span class="red">prop</span>] = <span class="blue">result</span>;
+        };
+    };
+};
+</pre>
+<pre>
+var my_storer = storer_maker(my_obj);
+do_it(my_inputs, my_storer("blah"));
+</pre>
+            </div>
+            <div class="step slide" data-x="1100" data-y="-1500">
+<h2>Once</h2>
+<pre class="big">
+var once = function (<span class="green">func</span>){
+    return function(){
+        var <span class="red">f</span> = <span class="green">func</span>;
+        <span class="green">func</span> = null;
+        return <span class="red">f</span>.apply(this, arguments);
+    };
+};
+</pre>
+<pre>
+do_it(my_inputs, once(storer(my_obj, "blah")));
+</pre>
+            </div>
+            <div class="step slide" data-x="2200" data-y="-1500">
+<h2>Revoker</h2>
+<pre class="big z1">
+var revoker = function(<span class="green">func</span>){
+    return {
+        <span class="blue">revocable</span>: function(){
+            return <span class="green">func</span>.apply(this, arguments);
+        },
+        <span class="red">revoke</span>: function(){
+            <span class="green">func</span> = null;
+        }
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="3300" data-y="-1500">
+<h2>Sealers and Unsealers</h2>
+<pre class="big z2">
+var make_sealer = function(){
+    var <span class="red">boxes</span> = [], <span class="blue">values</span> = [];
+    return {
+        <span class="green">sealer</span>: function(<span class="blue">value</span>){
+            var i = <span class="red">boxes</span>.length,
+                <span class="red">box</span> = {};
+            <span class="red">boxes</span>[i] = <span class="red">box</span>;
+            <span class="blue">values</span>[i] = <span class="blue">value</span>;
+            return <span class="red">box</span>;
+        },
+        <span class="green">unsealer</span>: function(<span class="red">box</span>){
+            return <span class="blue">values</span>[<span class="red">boxes</span>.indexOf(<span class="red">box</span>)];
+        }
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="4400" data-y="-1500">
+<h2>forEach</h2>
+<pre class="big">
+var forEach = function(arr, <span class="green">func</span>){
+    for(var x in arr){
+        <span class="green">func</span>(arr[x]);
+    }
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="5500" data-y="-1500">
+<h2>Sequence</h2>
+<pre class="big z1">
+var sequence = function(){
+    var <span class="green">functions</span> = <span class="green">arguments</span>;
+    return function(){
+        var <span class="blue">that</span> = <span class="blue">this</span>,
+            <span class="red">args</span> = <span class="red">arguments</span>;
+        forEach(<span class="green">functions</span>, function(<span class="green">func</span>){
+            <span class="green">func</span>.apply(<span class="blue">that</span>, <span class="red">args</span>);
+        });
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="6600" data-y="-1500">
+<pre class="big">
+do_ir(my_inputs, once(sequence(
+    storer(my_obj, "blah"),
+    storer(my_obj, "miaw"),
+    alert
+)));
+</pre>
+            </div>
+            <div class="step slide" data-x="7700" data-y="-1500">
+<h2>Pipe</h2>
+<pre class="big z2">
+var pipe = function (){
+    var <span class="green">functions</span> = <span class="green">arguments</span>;
+    return function(){
+        var <span class="red">args</span> = <span class="red">arguments</span>,
+            <span class="blue">ret</span>;
+        for(var i = 0; i< <span class="green">functions</span>.length; i += 1){
+            var <span class="green">f</span> = <span class="green">functions</span>[i];
+            <span class="blue">ret</span> = <span class="green">f</span>.apply(this,<span class="red">args</span>);
+            if(Array.isArray(<span class="blue">ret</span>)){
+                <span class="red">args</span> = <span class="blue">ret</span>;
+            }else{
+                <span class="red">args</span> = [<span class="blue">ret</span>];
+            }
+        }
+        return <span class="blue">ret</span>;
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="8800" data-y="-1500">
+<h2>Pipe</h2>
+<pre class="big z1">
+    var cube = function(x){
+            return x * x * x;
+        },
+        sine = function(x){
+            return Math.sin(x);
+        },
+        sineOfCubeAlert = pipe(cube, sin, alert);
+
+        sineOfCubeAlert(1); //0.8414709848078965
+</pre>
+            </div>
+            <div class="step slide" data-x="9900" data-y="-1500">
+<h2>Compose</h2>
+<pre class="big">
+var compose = function(<span class="red">fn1</span>, <span class="green">fn2</span>){
+    return function(){
+        var <span class="blue">ret</span> = <span class="green">fn2</span>.apply(this, arguments);
+        if (!Array.isArray(<span class="blue">ret</span>)){
+            <span class="blue">ret</span> = [<span class="blue">ret</span>];
+        }
+        return <span class="red">fn1</span>.apply(this, <span class="blue">ret</span>);
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="11000" data-y="-1500">
+<h2>Function Composition as a Pattern</h2>
+<pre class="big">
+function (req, res, next){
+    ....
+    next();
+}
+</pre>
+            </div>
+            <div class="step slide" data-x="12100" data-y="-1500">
+<h2>Asynchronous composition</h2>
+<pre class="big">
+function (input, next){
+    ...
+    setTimeout(function(){
+        next(output);
+    }, 20);
+}
+</pre>
+            </div>
+            <div class="step slide" data-x="13200" data-y="-1500">
+<h2>Async Composer</h2>
+<pre class="big z2">
+var asyncPipe = function (<span class="green">functions</span>){
+    var i = 0,
+        <span class="blue">next</span> = function(){
+            var <span class="red">args</span> = Array.prototype.slice.call(<span class="red">arguments</span>, 0);
+            <span class="red">args</span>.push(<span class="blue">next</span>);
+            if(i < <span class="green">functions</span>.length){
+                <span class="green">functions</span>[i++].apply(this, <span class="red">args</span>);
+            }else{
+                return <span class="red">arguments</span>;
+            }
+        };
+    return function(){
+        return <span class="blue">next</span>.apply(this,<span class="yellow">arguments</span>);
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="14300" data-y="-1500">
+<pre class="big z2" style="margin-top:0px">
+var arr <span class="red">=</span> [];
+arr.push(<span class="green">function</span>(req, res ,next){
+    <span class="red">if</span>(req.status <span class="red">===</span> 200){
+        res.body <span class="red">+=</span> <span class="yellow">"is Ok"</span>;
+    }
+    next(req, res);
+});
+arr.push(<span class="green">function</span>(req, res ,next){
+    <span class="red">if</span>(res.body <span class="red">!==</span> <span class="yellow">""</span>){
+        res.body <span class="red">+=</span> <span class="yellow">"and This is the end"</span>;
+    }
+    next(req, res);
+});
+<span class="blue">var</span> fn <span class="red">=</span> asyncPipe(arr),
+    req <span class="red">=</span> {status:200},
+    res <span class="red">=</span> {body: <span class="yellow">""</span>};
+fn(req, res);
+alert(res.body);
+</pre>
+            </div>
+            <div class="step slide" data-x="15400" data-y="-1500">
+<h1>Function Composition<br/><br/>Lambda Calculus</h1>
+            </div>
+            <div class="step slide" data-x="16500" data-y="-1500">
+<h2>Lambda Calculus</h2>
+<h3>Functions don't need names</h3>
+<pre class="big">
+<span class="red">sum</span>(<span class="green">x</span>,<span class="green">y</span>) <span class="red">-></span> <span class="green">x</span>+<span class="green">y</span>
+<span class="red">s</span>(<span class="green">x</span>,<span class="green">y</span>) <span class="red">-></span> <span class="green">x</span>+<span class="green">y</span>
+<span class="red">j</span>(<span class="green">x</span>,<span class="green">y</span>) <span class="red">-></span> <span class="green">x</span>+<span class="green">y</span>
+(<span class="green">x</span>,<span class="green">y</span>) <span class="red">-></span> <span class="green">x</span>+<span class="green">y</span>
+</pre>
+            </div>
+            <div class="step slide" data-x="17600" data-y="-1500">
+<h2>Parameters names are irrelevant</h2>
+<pre class="big">
+<span class="red">s</span>(<span class="green">x</span>,<span class="green">y</span>) <span class="red">-></span> <span class="green">x</span> + <span class="green">y</span>
+<span class="red">s</span>(<span class="green">u</span>,<span class="green">v</span>) <span class="red">-></span> <span class="green">u</span> + <span class="green">v</span>
+</pre>
+            </div>
+            <div class="step slide" data-x="18700" data-y="-1500">
+<h2>Any function that takes more than one argument
+could be rewritten as a succession of functions of one argument</h2>
+<pre class="big">
+<span class="red">s</span>(<span class="green">x</span>,<span class="green">y</span>)<span class="red">-></span> <span class="green">x</span> + <span class="green">y</span>
+(<span class="green">x</span>)<span class="red">-></span>( (<span class="green">y</span>)<span class="red">-></span> <span class="green">x</span> + <span class="green">y</span> )
+</pre>
+            </div>
+            <div class="step slide" data-x="19800" data-y="-1500">
+<h2>Lambda Calculus</h2>
+<br/>
+<h3 class="move-left delay1">Functions don't need names</h3>
+<br/>
+<h3 class="move-left delay2">Parameters names are irrelevant</h3>
+<br/>
+<h3 class="move-left delay3">Any function that takes more than one argument
+could be rewritten as a succession of functions of one argument</h3>
+            </div>
+            <div class="step slide" data-x="20900" data-y="-1500">
+<h2>Identity</h2>
+<pre class="big">
+<span class="red">I</span>(<span class="green">x</span>)<span class="red">-></span> <span class="green">x</span>
+</pre>
+            </div>
+            <div class="step slide" data-x="22000" data-y="-1500">
+<h2>Identity</h2>
+<pre class="big">
+<span class="blue">function</span> <span class="green">I</span>(x){
+    <span class="red">return</span> x;
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="23100" data-y="-1500">
+<h2>Church Numbers</h2>
+<br/>
+<h3>The <span class="red">N</span> church number is a function that takes a function <span class="green">F</span> as an argument
+and returns another function that compose <span class="green">F</span> with her self <span class="red">N</span> times</h3>
+            </div>
+            <div class="step slide" data-x="24200" data-y="-1500">
+<h2>Church Numbers</h2>
+<h3>Zero</h3>
+<pre class="big">
+<span class="blue">var</span> <span class="green">zero</span> <span class="red">=</span> <span class="blue">function</span>(f){
+    <span class="red">return</span> I;
+};
+</pre>
+
+            </div>
+            <div class="step slide" data-x="25300" data-y="-1500">
+<h2>Church Numbers</h2>
+<h3>One</h3>
+<pre class="big">
+<span class="blue">var</span> <span class="green">one</span> <span class="red">=</span> <span class="blue">function</span> (f){
+    <span class="red">return</span> <span class="blue">function</span>(x){
+        <span class="red">return</span> f(x);
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="26400" data-y="-1500">
+<h2>Church Numbers</h2>
+<h3>Two</h3>
+<pre class="big">
+<span class="blue">var</span> <span class="green">two</span> <span class="red">=</span> <span class="blue">function</span>(f){
+    <span class="red">return</span> <span class="blue">function</span>(x){
+        <span class="red">return</span> f(f(x));
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="27500" data-y="-1500">
+<h2>Church Number</h2>
+<h3>Succesor</h3>
+<pre class="big">
+<span class="blue">var</span> <span class="green">succ</span> <span class="red">=</span> <span class="blue">function</span>(<span class="yellow">n</span>){
+    <span class="red">return</span> <span class="blue">function</span>(<span class="magenta">f</span>){
+        <span class="red">return</span> <span class="blue">function</span> (x){
+            <span class="red">return</span> <span class="magenta">f</span>(<span class="yellow">n</span>(<span class="magenta">f</span>)(x));
+        };
+    };
+};
+</pre>
+            </div>
+            <div class="step slide" data-x="28600" data-y="-1500">
+<h2>Church Numbers</h2>
+<pre class="big">
+<span class="green">f</span> = <span class="blue">function</span>(x){
+    <span class="red">return</span> x + 1;
+};
+x = 0;
+</pre>
+            </div>
+            <div class="step slide" data-x="29700" data-y="-1500">
+<pre class="big">
+alert(f(0)) //1
+alert(zero(f)(0)); // 0
+<span class="blue">var</span> one <span class="red">=</span> succ(zero);
+alert(one(f)(0)); // 1
+<span class="blue">var</span> two <span class="red">=</span> succ(one);
+alert(two(f)(0)); // 2
+</pre>
+            </div>
+            <div class="step slide" data-x="30800" data-y="-1500">
+                <h1>DEMO</h1>
+            </div>
+            <div class="step slide" data-x="31900" data-y="-1500">
+                <textarea id="job" class="left txt">    function isPrime(num) { 
+        for (var i = 2; i < num; i++) {
+            if(num%i==0)
+                 return false;
+        }
+        return true;
+    };
+    var min = parseInt(arguments[0],10),
+        max = parseInt(arguments[1],10),
+        i,
+        primes = [];
+
+    for(i = min; i < max; i +=1){
+        if(isPrime(i)){
+            primes.push(i);
+        }
+    }
+
+    return primes;</textarea>
+                <textarea id="parameters" class="right txt">1,100000|100001,200000|200001,300000|300001,400000|400001,500000|500001,600000|600001,700000|700001,800000|800001,900000|900001,1000000</textarea>
+                <div style="float:left;width:100%">
+                <input type="button" id="sendJob" value="Send" />
+                <div id="console"></div>
+            </div>
+            </div>
+        </div>
+        <div class="hint">
+            <p>Use a spacebar or arrow keys to navigate</p>
+        </div>
+        <script>
+            if ("ontouchstart" in document.documentElement) { 
+            document.querySelector(".hint").innerHTML = "<p>Tap on the left or right to navigate</p>";
+            }
+        </script>
+        <script src="js/impress.js"></script>
+        <script>impress().init();</script>
+    </body>
+</html>
